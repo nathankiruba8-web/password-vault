@@ -1,0 +1,101 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Custom Color System for high-security applications */
+  --color-slate-850: #1b2330;
+  --color-slate-855: #131a24;
+  --color-slate-950: #090d16;
+  --color-indigo-650: #4f46e5;
+  --color-indigo-755: #3730a3;
+  --color-emerald-450: #34d399;
+  --color-amber-450: #fbbf24;
+  --color-rose-450: #f87171;
+  --color-rose-655: #e11d48;
+
+  /* Animation and transition curves */
+  --animate-fade-in: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-glow: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glow {
+  0% { box-shadow: 0 0 5px rgba(79, 70, 229, 0.15), 0 0 10px rgba(79, 70, 229, 0.05); }
+  100% { box-shadow: 0 0 15px rgba(79, 70, 229, 0.3), 0 0 25px rgba(79, 70, 229, 0.1); }
+}
+
+/* Base resets & modern fluid variables */
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased selection:bg-indigo-500/30 selection:text-indigo-200 scroll-smooth;
+  }
+
+  /* Support clean focus highlights across all controls */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-indigo-505 ring-offset-2 ring-offset-slate-950;
+  }
+}
+
+/* Custom Component Layout Styles & Utility Overrides */
+@layer utilities {
+  /* High-fidelity custom scrollbar mechanics for compact views */
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-none {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-slate-950/40;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-slate-800 rounded-full hover:bg-slate-700 transition-colors;
+  }
+
+  /* Glassmorphic Cybercard styling */
+  .cyber-card {
+    @apply bg-slate-900/80 backdrop-blur-md border border-slate-850/60 shadow-xl shadow-slate-950/20 rounded-2xl;
+  }
+
+  /* Glowing indicators and alerts */
+  .glow-indigo {
+    animation: glow 3s ease-in-out infinite alternate;
+  }
+
+  /* Smooth range inputs styling */
+  input[type="range"]::-webkit-slider-thumb {
+    @apply h-4.5 w-4.5 rounded-full bg-indigo-500 shadow-md cursor-pointer transition-transform hover:scale-110 active:scale-95;
+    -webkit-appearance: none;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    @apply h-4.5 w-4.5 rounded-full bg-indigo-500 border-none shadow-md cursor-pointer transition-transform hover:scale-110 active:scale-95;
+  }
+}
+
+/* Layout structural overrides */
+.glass-panel {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(9, 13, 22, 0.95) 100%);
+  backdrop-filter: blur(8px);
+}
+
+.crypto-grid {
+  background-size: 20px 20px;
+  background-image: 
+    linear-gradient(to right, rgba(148, 163, 184, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.02) 1px, transparent 1px);
+}
