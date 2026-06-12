@@ -6,19 +6,20 @@
 /**
  * File 19: frontend/src/api/client.js
  * Configures the centralized Axios HTTP client.
- * Implements automated request interception to transparently inject JWT tokens,
- * and response interception to seamlessly capture authorization expired events (401 errors).
  */
 
 import axios from 'axios';
 
+// Vite-ல் Environment Variable
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://password-vault-3ln6.onrender.com';
+
 // Create a configured Axios instance
 const apiClient = axios.create({
-  baseURL: '', // Empty base URL routes requests relative to current host
+  baseURL: API_BASE_URL, // இப்போது கோரிக்கைகள் சரியாக Render சர்வருக்குச் செல்லும்
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 15000, // Safe 15-second retrieval safety margin
+  timeout: 15000, 
 });
 
 // Request Interceptor: Automatically inject the stored JWT token
@@ -35,30 +36,22 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response Interceptor: Route authorization failures to session termination handlers
+// Response Interceptor: Handle session expiration
 apiClient.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
-    // Audit response status structures
-    if (error.response) {
-      const { status } = error.response;
+    if (error.response && error.response.status === 401) {
+      console.warn('Cryptographic session expired. Clearing cache.');
+      localStorage.removeItem('vault_token');
+      localStorage.removeItem('vault_user');
       
-      // If unauthorized token is identified, purge session storage gracefully
-      if (status === 401) {
-        console.warn('Cryptographic session expired or denied. Terminating cache elements.');
-        localStorage.removeItem('vault_token');
-        localStorage.removeItem('vault_user');
-        
-        // Optionally reload page or dispatch window event to trigger app-level re-evaluation
-        if (typeof window !== 'undefined') {
-          // Prevent infinite loops on authenticating directories
-          const path = window.location.pathname;
-          if (path !== '/login' && path !== '/register' && path !== '/forgot-password' && path !== '/reset-password') {
-            window.location.href = '/login';
-          }
-        }
+      // Redirect to login only if not already on an auth page
+      const currentPath = window.location.pathname;
+      const authPaths = ['/login', '/register', '/forgot-password', '/reset-password'];
+      if (!authPaths.includes(currentPath)) {
+        window.location.href = '/login';
       }
     }
     return Promise.reject(error);
