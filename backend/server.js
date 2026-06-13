@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -16,10 +11,6 @@ const { mongoose, isDbConnected } = require('./db/connection');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// ==========================================
-// 2. MIDDLEWARE CONFIGURATIONS
-// ==========================================
 
 app.use(helmet({
   contentSecurityPolicy: {
@@ -35,7 +26,6 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-// ✅ FIXED: Allow ALL origins temporarily
 app.use(cors({
   origin: true,
   credentials: true,
@@ -43,7 +33,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-app.options('*', cors());
+
 
 const loggerFormat = process.env.NODE_ENV === 'production' ? 'combined' : 'dev';
 app.use(morgan(loggerFormat));
@@ -63,37 +53,15 @@ const apiLimiter = rateLimit({
 });
 app.use('/api/', apiLimiter);
 
-// ==========================================
-// 3. ROUTE REGISTRATION (With Error Handling)
-// ==========================================
+const authRouter = require('./routes/authRoutes');
+const passwordRouter = require('./routes/passwordRoutes');
+const securityRouter = require('./routes/securityRoutes');
 
-// ✅ FIXED: Wrap in try-catch to find which route fails
-try {
-  const authRouter = require('./routes/authRoutes');
-  app.use('/api/auth', authRouter);
-  console.log('✅ authRoutes loaded');
-} catch (e) {
-  console.error('❌ authRoutes failed:', e.message);
-}
+app.use('/api/auth', authRouter);
+app.use('/api/passwords', passwordRouter);
+app.use('/api/security', securityRouter);
+app.use('/api/vault', passwordRouter);
 
-try {
-  const passwordRouter = require('./routes/passwordRoutes');
-  app.use('/api/passwords', passwordRouter);
-  app.use('/api/vault', passwordRouter);
-  console.log('✅ passwordRoutes loaded');
-} catch (e) {
-  console.error('❌ passwordRoutes failed:', e.message);
-}
-
-try {
-  const securityRouter = require('./routes/securityRoutes');
-  app.use('/api/security', securityRouter);
-  console.log('✅ securityRoutes loaded');
-} catch (e) {
-  console.error('❌ securityRoutes failed:', e.message);
-}
-
-// Health check
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'healthy',
@@ -101,10 +69,6 @@ app.get('/api/health', (req, res) => {
     database: isDbConnected() ? 'connected' : 'local_fallback'
   });
 });
-
-// ==========================================
-// 4. STATIC ASSETS
-// ==========================================
 
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(__dirname, '../dist');
@@ -114,10 +78,6 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// ==========================================
-// 5. ERROR HANDLING
-// ==========================================
-
 app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Endpoint requested does not exist.' });
 });
@@ -125,19 +85,14 @@ app.use('/api', (req, res) => {
 app.use((err, req, res, next) => {
   console.error('[Global Error]:', err.stack || err);
   const statusCode = err.status || err.statusCode || 500;
-  const isProd = process.env.NODE_ENV === 'production';
   res.status(statusCode).json({
     error: {
       message: err.message || 'Internal Server Error',
-      status: statusCode,
-      ...(isProd ? {} : { stack: err.stack })
+      status: statusCode
     }
   });
 });
 
-// ==========================================
-// 6. SERVER BOOTUP
-// ==========================================
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Express server running on port ${PORT}`);
 });
