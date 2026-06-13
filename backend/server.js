@@ -12,6 +12,17 @@ const { mongoose, isDbConnected } = require('./db/connection');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// CORS FIRST
+app.use(cors({
+  origin: true,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
+app.options('*', cors());
+
+// Helmet AFTER CORS
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -25,15 +36,6 @@ app.use(helmet({
   },
   crossOriginEmbedderPolicy: false,
 }));
-
-app.use(cors({
-  origin: true,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
-
-
 
 const loggerFormat = process.env.NODE_ENV === 'production' ? 'combined' : 'dev';
 app.use(morgan(loggerFormat));
