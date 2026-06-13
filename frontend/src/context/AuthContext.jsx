@@ -3,14 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * File 20: frontend/src/context/AuthContext.jsx
- * Centralized Authentication State Context.
- * Governs session tokens, identity profiles, multi-factor logins, registration, and logout operations.
- */
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import apiClient from '../api/client';
+import apiClient from '../api/client'; // நாம் செட் செய்த apiClient-ஐ இம்போர்ட் செய்கிறோம்
 
 const AuthContext = createContext(null);
 
@@ -35,26 +29,13 @@ export function AuthProvider({ children }) {
         return;
       }
       try {
-        // Query security statistic values to ensure token validity
         const response = await apiClient.get('/api/security/stats');
-        
         if (response.status === 200) {
           const storedUser = localStorage.getItem('vault_user');
-          if (storedUser) {
-            setUser(JSON.parse(storedUser));
-          } else {
-            // Baseline structure profile if cache gets decoupled
-            setUser({ id: 'me', name: 'Vault Keeper', email: 'user@securevault.local' });
-          }
-        } else {
-          logout();
+          if (storedUser) setUser(JSON.parse(storedUser));
         }
       } catch (err) {
-        console.error('Session security validation mismatch:', err.message);
-        // Clear session state if we encounter credentials rejection
-        if (err.response && err.response.status === 401) {
-          logout();
-        }
+        if (err.response?.status === 401) logout();
       } finally {
         setLoading(false);
       }
@@ -63,97 +44,33 @@ export function AuthProvider({ children }) {
   }, [token]);
 
   /**
-   * User Standard Password login
-   */
-  const login = async (email, password) => {
-    setAuthError(null);
-    try {
-      const response = await apiClient.post('/api/auth/login', { email, password });
-      const data = response.data;
-
-      if (data.twoFactorRequired) {
-        return { twoFactorRequired: true, userId: data.userId, email: data.email };
-      }
-
-      localStorage.setItem('vault_token', data.token);
-      localStorage.setItem('vault_user', JSON.stringify(data.user));
-      setToken(data.token);
-      setUser(data.user);
-      return { success: true };
-    } catch (err) {
-      const message = err.response?.data?.error || err.message || 'Login attempt failed.';
-      setAuthError(message);
-      throw new Error(message);
-    }
-  };
-
-  /**
-   * multi-Factor verification login
-   */
-  const login2FA = async (userId, tokenCode, isBackup = false) => {
-    setAuthError(null);
-    try {
-      const endpoint = isBackup ? '/api/auth/login/backup' : '/api/auth/login/2fa';
-      const payload = isBackup 
-        ? { userId, backupCode: tokenCode }
-        : { userId, token: tokenCode };
-
-      const response = await apiClient.post(endpoint, payload);
-      const data = response.data;
-
-      localStorage.setItem('vault_token', data.token);
-      localStorage.setItem('vault_user', JSON.stringify(data.user));
-      setToken(data.token);
-      setUser(data.user);
-      return { success: true };
-    } catch (err) {
-      const message = err.response?.data?.error || err.message || 'MFA validation challenge failed.';
-      setAuthError(message);
-      throw new Error(message);
-    }
-  };
-
-  /**
-   * User Registration API
+   * User Registration API - திருத்தப்பட்டது
    */
   const register = async (name, email, password) => {
     setAuthError(null);
     try {
+      // apiClient-ஐப் பயன்படுத்துவதால் இது தானாகவே Render URL-க்குச் செல்லும்
       const response = await apiClient.post('/api/auth/register', { name, email, password });
-      const data = response.data;
-
-      localStorage.setItem('vault_token', data.token);
-      localStorage.setItem('vault_user', JSON.stringify(data.user));
-      setToken(data.token);
-      setUser(data.user);
+      
+      const { token, user } = response.data;
+      localStorage.setItem('vault_token', token);
+      localStorage.setItem('vault_user', JSON.stringify(user));
+      setToken(token);
+      setUser(user);
       return { success: true };
     } catch (err) {
-      const message = err.response?.data?.error || err.message || 'Registration failed.';
+      // எரர் மெசேஜை சரியாகப் பிரித்து எடுக்கிறோம்
+      const message = err.response?.data?.message || err.response?.data?.error || 'Registration failed.';
       setAuthError(message);
       throw new Error(message);
     }
   };
 
-  /**
-   * Purges cryptographic session variables and logouts
-   */
   const logout = () => {
     localStorage.removeItem('vault_token');
     localStorage.removeItem('vault_user');
     setToken(null);
     setUser(null);
-    setAuthError(null);
-  };
-
-  /**
-   * Synchronizes user's context status on MFA profile revisions
-   */
-  const syncMfaStatus = (isEnabled) => {
-    if (user) {
-      const updatedUser = { ...user, isTwoFactorEnabled: isEnabled };
-      localStorage.setItem('vault_user', JSON.stringify(updatedUser));
-      setUser(updatedUser);
-    }
   };
 
   const value = {
@@ -162,11 +79,8 @@ export function AuthProvider({ children }) {
     loading,
     authError,
     setAuthError,
-    login,
-    login2FA,
     register,
-    logout,
-    syncMfaStatus
+    logout
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
