@@ -167,3 +167,13 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 });
 
 module.exports = server;
+// ✅ FIXED: Allow ALL origins temporarily + Handle OPTIONS
+app.use(cors({
+  origin: true,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
+// Handle OPTIONS preflight requests
+app.options('*', cors());
