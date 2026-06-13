@@ -51,11 +51,15 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-// Cross-Origin Resource Sharing (CORS) Configuration
+// ✅ FIXED: CORS - Allow Vercel frontend + Render + Local dev
 const allowedOrigins = [
   process.env.APP_URL,
+  'https://password-vault-6b7loyap0-nathankiruba8-webs-projects.vercel.app',
+  'https://password-vault-3in6.onrender.com',
   'http://localhost:3000',
-  'http://127.0.0.1:3000'
+  'http://localhost:5173',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173'
 ].filter(Boolean);
 
 app.use(cors({
@@ -65,7 +69,7 @@ app.use(cors({
     if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
       return callback(null, true);
     } else {
-      return callback(new Error('Blocked by CORS policy.'));
+      return callback(new Error('Blocked by CORS policy. Origin: ' + origin));
     }
   },
   credentials: true,
