@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: [true, 'Email is required'],
-    unique: true,
+    unique: true,  // ← Auto-creates index internally
     trim: true,
     lowercase: true,
     match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please provide a valid email address']
@@ -60,8 +60,10 @@ const userSchema = new mongoose.Schema({
   timestamps: true // Auto-manages createdAt and updatedAt fields
 });
 
-// Configure indexes for rapid search lookup performance
-userSchema.index({ email: 1 }, { unique: true });
+// ✅ FIXED: Removed duplicate email index
+// userSchema.index({ email: 1 }, { unique: true });  // ← DELETED (duplicate!)
+
+// Keep only this non-unique index
 userSchema.index({ passwordResetToken: 1 });
 
 const User = getResilientModel('User', userSchema);
