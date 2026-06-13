@@ -4,6 +4,7 @@
   "buildCommand": "npm install --legacy-peer-deps && npx vite build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
+    { "source": "/api/(.*)", "destination": "https://password-vault-3ln6.onrender.com/api/$1" }
   ]
+
 }
