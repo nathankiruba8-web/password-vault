@@ -18,10 +18,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ==========================================
-// 1. DATABASE CONNECTION
-// ==========================================
-
-// ==========================================
 // 2. MIDDLEWARE CONFIGURATIONS
 // ==========================================
 
@@ -68,18 +64,36 @@ const apiLimiter = rateLimit({
 app.use('/api/', apiLimiter);
 
 // ==========================================
-// 3. ROUTE REGISTRATION
+// 3. ROUTE REGISTRATION (With Error Handling)
 // ==========================================
 
-let authRouter = require('./routes/authRoutes');
-let passwordRouter = require('./routes/passwordRoutes');
-let securityRouter = require('./routes/securityRoutes');
+// ✅ FIXED: Wrap in try-catch to find which route fails
+try {
+  const authRouter = require('./routes/authRoutes');
+  app.use('/api/auth', authRouter);
+  console.log('✅ authRoutes loaded');
+} catch (e) {
+  console.error('❌ authRoutes failed:', e.message);
+}
 
-app.use('/api/auth', authRouter);
-app.use('/api/passwords', passwordRouter);
-app.use('/api/security', securityRouter);
-app.use('/api/vault', passwordRouter);
+try {
+  const passwordRouter = require('./routes/passwordRoutes');
+  app.use('/api/passwords', passwordRouter);
+  app.use('/api/vault', passwordRouter);
+  console.log('✅ passwordRoutes loaded');
+} catch (e) {
+  console.error('❌ passwordRoutes failed:', e.message);
+}
 
+try {
+  const securityRouter = require('./routes/securityRoutes');
+  app.use('/api/security', securityRouter);
+  console.log('✅ securityRoutes loaded');
+} catch (e) {
+  console.error('❌ securityRoutes failed:', e.message);
+}
+
+// Health check
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'healthy',
@@ -89,25 +103,10 @@ app.get('/api/health', (req, res) => {
 });
 
 // ==========================================
-// 4. VITE SERVICE MIDDLEWARE & STATIC ASSETS
+// 4. STATIC ASSETS
 // ==========================================
 
-if (process.env.NODE_ENV !== 'production') {
-  try {
-    const { createServer: createViteServer } = require('vite');
-    createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    }).then((vite) => {
-      app.use(vite.middlewares);
-      console.log('Vite development server middleware integrated into Express.');
-    }).catch((err) => {
-      console.error('Initialization error during Vite compilation:', err);
-    });
-  } catch (err) {
-    console.error('Failed to resolve Vite integration dependencies.', err);
-  }
-} else {
+if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(__dirname, '../dist');
   app.use(express.static(distPath));
   app.get('*', (req, res) => {
@@ -116,19 +115,17 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // ==========================================
-// 5. ERROR HANDLING MIDDLEWARE
+// 5. ERROR HANDLING
 // ==========================================
 
-app.use('/api', (req, res, next) => {
+app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Endpoint requested does not exist.' });
 });
 
 app.use((err, req, res, next) => {
   console.error('[Global Error]:', err.stack || err);
-  
   const statusCode = err.status || err.statusCode || 500;
   const isProd = process.env.NODE_ENV === 'production';
-  
   res.status(statusCode).json({
     error: {
       message: err.message || 'Internal Server Error',
@@ -143,7 +140,6 @@ app.use((err, req, res, next) => {
 // ==========================================
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Express server running on port ${PORT}`);
-  console.log(`Environment mode: ${process.env.NODE_ENV || 'development'}`);
 });
 
 module.exports = server;
